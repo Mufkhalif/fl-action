@@ -1,78 +1,129 @@
 // ignore_for_file: library_private_types_in_public_api, avoid_print, sized_box_for_whitespace, sort_child_properties_last
 
-import 'package:fl_cicd/home_screen.dart';
+import 'package:fl_cicd/custome_pdf_render.dart';
 import 'package:fl_cicd/pageturn1.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:internet_file/internet_file.dart';
-import 'package:pdfx/pdfx.dart';
+import 'package:pdfx/pdfx.dart' as px;
 
-void main() {
-  runApp(MyApp());
-  // runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: HomePagePdfView(),
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({
+class HomePagePdfView extends StatefulWidget {
+  const HomePagePdfView({
     Key? key,
   }) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _HomePagePdfViewState createState() => _HomePagePdfViewState();
 }
 
-class _HomePageState extends State<HomePage> {
-  List<PdfPageImage> imagesPdf = [];
-
+class _HomePagePdfViewState extends State<HomePagePdfView> {
   final _controller = GlobalKey<PageTurnState>();
+  final Map<int, px.PdfPageImage?> _pages = {};
 
-  Future<PdfPageImage?> getPdfDocuments() async {
-    final document = await PdfDocument.openData(
-        InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'));
+  bool isLoading = false;
 
-    print(document.pagesCount);
+  int pagesCount = 0;
 
-    final page = await document.getPage(2);
-    final pageImage = await page.render(
-      width: page.width,
-      height: page.height,
+  late PdfController pdfController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    initPdf();
+
+    // getPdfDocuments();
+  }
+
+  Future<void> initPdf() async {
+    pdfController = PdfController(
+      document: px.PdfDocument.openData(
+          InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf')),
+    );
+  }
+
+  Future<void> getPdfDocuments() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final document = await px.PdfDocument.openData(
+      InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'),
     );
 
-    await page.close();
-    return pageImage;
+    setState(() {
+      pagesCount = document.pagesCount;
+      isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: FutureBuilder<PdfPageImage?>(
-      future: getPdfDocuments(),
-      builder: (context, snapshot) {
-        if (snapshot.data == null) return CircularProgressIndicator();
+      body: CustomePagePdf(
+        controller: pdfController,
+      ),
+    );
+    // return Scaffold(
+    //   body: SafeArea(
+    //     child: isLoading
+    //         ? const Center(
+    //             child: CircularProgressIndicator(),
+    //           )
+    //         : PageTurn(
+    //             key: _controller,
+    //             backgroundColor: Colors.white,
+    //             lastPage: const Center(child: Text('Last Page!')),
+    // children: <Widget>[
+    //   for (var i = 0; i < pagesCount; i++)
+    //     ImagePdfContent(number: i),
+    // ],
+    //           ),
+    //   ),
+    // );
+  }
+}
 
-        print(snapshot.data!.bytes);
+class ImagePdfContent extends StatefulWidget {
+  const ImagePdfContent({Key? key, required this.number}) : super(key: key);
 
-        return Image(
-          image: MemoryImage(snapshot.data!.bytes),
-        );
-      },
-    ));
+  final int number;
+
+  @override
+  State<ImagePdfContent> createState() => _ImagePdfContentState();
+}
+
+class _ImagePdfContentState extends State<ImagePdfContent> {
+  late px.PdfPageImage imagePdfBytes;
+
+  @override
+  void initState() {
+    super.initState();
+
+    getPdfDocuments();
+  }
+
+  Future<void> getPdfDocuments() async {
+    final document = await px.PdfDocument.openData(
+      InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'),
+    );
+
+    final page = await document.getPage(widget.number + 1);
+    final pageImage = await page.render(
+      width: page.width,
+      height: page.height,
+    );
+
+    imagePdfBytes = pageImage!;
+
+    await page.close();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(imagePdfBytes.bytes.toString()),
+    );
   }
 }
 
