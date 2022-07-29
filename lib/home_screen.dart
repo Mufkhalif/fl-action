@@ -1,11 +1,11 @@
 // ignore_for_file: library_private_types_in_public_api, avoid_print, sized_box_for_whitespace, sort_child_properties_last
 
-import 'package:fl_cicd/custome_pdf_render.dart';
+import 'dart:typed_data';
+
 import 'package:fl_cicd/pageturn1.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:internet_file/internet_file.dart';
-import 'package:pdfx/pdfx.dart' as px;
+import 'package:pdfx/pdfx.dart';
 
 class HomePagePdfView extends StatefulWidget {
   const HomePagePdfView({
@@ -18,28 +18,19 @@ class HomePagePdfView extends StatefulWidget {
 
 class _HomePagePdfViewState extends State<HomePagePdfView> {
   final _controller = GlobalKey<PageTurnState>();
-  final Map<int, px.PdfPageImage?> _pages = {};
-
   bool isLoading = false;
 
   int pagesCount = 0;
+  int imagesCount = 0;
 
-  late PdfController pdfController;
+  List<PdfPageImage> listImages = [];
 
   @override
   void initState() {
     super.initState();
 
-    initPdf();
-
+    getLocalAssets();
     // getPdfDocuments();
-  }
-
-  Future<void> initPdf() async {
-    pdfController = PdfController(
-      document: px.PdfDocument.openData(
-          InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf')),
-    );
   }
 
   Future<void> getPdfDocuments() async {
@@ -47,7 +38,7 @@ class _HomePagePdfViewState extends State<HomePagePdfView> {
       isLoading = true;
     });
 
-    final document = await px.PdfDocument.openData(
+    final document = await PdfDocument.openData(
       InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'),
     );
 
@@ -57,30 +48,109 @@ class _HomePagePdfViewState extends State<HomePagePdfView> {
     });
   }
 
+  Future<void> getLocalAssets() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    List<PdfPageImage> data = <PdfPageImage>[];
+
+    final document = await PdfDocument.openData(
+      InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'),
+    );
+
+    // final document = await PdfDocument.openAsset('assets/pdf/example.pdf');
+    final pageCount = document.pagesCount;
+
+    for (var i = 1; i < pageCount; i++) {
+      final page = await document.getPage(i);
+      final pageImage = await page.render(
+        width: page.width,
+        height: page.height,
+      );
+
+      data.add(pageImage!);
+      await page.close();
+    }
+
+    setState(() {
+      listImages = data;
+      isLoading = false;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    setState(() {
+      listImages = data;
+      isLoading = false;
+    });
+  }
+
+  Future<List<PdfPageImage?>> getData() async {
+    var data = <PdfPageImage>[];
+
+    List images = [];
+
+    final document = await PdfDocument.openAsset('assets/pdf/example.pdf');
+    final pageCount = document.pagesCount;
+
+    for (var i = 1; i < pageCount; i++) {
+      final page = await document.getPage(i);
+
+      final pageImage = await page.render(
+        width: page.width,
+        height: page.height,
+      );
+
+      data.add(pageImage!);
+
+      var img = pageImage.bytes;
+      images.add(img);
+      await page.close();
+    }
+
+    print("length image: ${images.length}");
+
+    return data;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomePagePdf(
-        controller: pdfController,
+      body: SafeArea(
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : listImages.isEmpty
+                ? const Center(
+                    child: Text("Empty"),
+                  )
+                : PageTurn(
+                    backgroundColor: Colors.white,
+                    lastPage: const Center(child: Text('Last Page!')),
+                    children: <Widget>[
+                      for (var i = 0; i < listImages.length; i++)
+                        ContentPage(data: listImages[i])
+                    ],
+                  ),
       ),
     );
-    // return Scaffold(
-    //   body: SafeArea(
-    //     child: isLoading
-    //         ? const Center(
-    //             child: CircularProgressIndicator(),
-    //           )
-    //         : PageTurn(
-    //             key: _controller,
-    //             backgroundColor: Colors.white,
-    //             lastPage: const Center(child: Text('Last Page!')),
-    // children: <Widget>[
-    //   for (var i = 0; i < pagesCount; i++)
-    //     ImagePdfContent(number: i),
-    // ],
-    //           ),
-    //   ),
-    // );
+  }
+}
+
+class ContentPage extends StatelessWidget {
+  const ContentPage({Key? key, required this.data}) : super(key: key);
+
+  final PdfPageImage data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: Image.memory(data.bytes),
+    );
   }
 }
 
@@ -94,7 +164,9 @@ class ImagePdfContent extends StatefulWidget {
 }
 
 class _ImagePdfContentState extends State<ImagePdfContent> {
-  late px.PdfPageImage imagePdfBytes;
+  late PdfController _pdfController;
+
+  bool _isSampleDoc = true;
 
   @override
   void initState() {
@@ -104,96 +176,115 @@ class _ImagePdfContentState extends State<ImagePdfContent> {
   }
 
   Future<void> getPdfDocuments() async {
-    final document = await px.PdfDocument.openData(
-      InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'),
-    );
-
-    final page = await document.getPage(widget.number + 1);
-    final pageImage = await page.render(
-      width: page.width,
-      height: page.height,
-    );
-
-    imagePdfBytes = pageImage!;
-
-    await page.close();
+    _pdfController = PdfController(
+        document: PdfDocument.openData(
+          InternetFile.get('https://pibo.imgix.net/books/file/1656741894.pdf'),
+        ),
+        initialPage: 2);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(imagePdfBytes.bytes.toString()),
-    );
-  }
-}
-
-class AlicePage extends StatefulWidget {
-  final int page;
-
-  const AlicePage({Key? key, required this.page}) : super(key: key);
-
-  @override
-  State<AlicePage> createState() => _AlicePageState();
-}
-
-class _AlicePageState extends State<AlicePage> {
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTextStyle.merge(
-      style: const TextStyle(fontSize: 16.0),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(
-                "CHAPTER ${widget.page}",
-                style: const TextStyle(
-                  fontSize: 32.0,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const Text(
-                "Down the Rabbit-Hole",
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32.0),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Expanded(
-                    child: Text(
-                        "Alice was beginning to get very tired of sitting by her sister on the bank, and of"
-                        " having nothing to do: once or twice she had peeped into the book her sister was "
-                        "reading, but it had no pictures or conversations in it, `and what is the use of "
-                        "a book,' thought Alice `without pictures or conversation?'"),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.only(left: 12.0),
-                    color: Colors.black26,
-                    width: 160.0,
-                    height: 220.0,
-                    child: const Placeholder(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-            ],
+    return Scaffold(
+      backgroundColor: Colors.grey,
+      body: PdfView(
+        controller: _pdfController,
+        builders: PdfViewBuilders<DefaultBuilderOptions>(
+          options: const DefaultBuilderOptions(
+            loaderSwitchDuration: Duration(seconds: 1),
+            transitionBuilder: SomeWidget.transitionBuilder,
           ),
+          documentLoaderBuilder: (_) =>
+              const Center(child: CircularProgressIndicator()),
+          pageLoaderBuilder: (_) =>
+              const Center(child: CircularProgressIndicator()),
+          errorBuilder: (_, error) => Center(child: Text(error.toString())),
+          pageBuilder: SomeWidget.pageBuilder,
         ),
       ),
     );
   }
+
+  PhotoViewGalleryPageOptions _pageBuilder(
+    BuildContext context,
+    Future<PdfPageImage> pageImage,
+    int index,
+    PdfDocument document,
+  ) {
+    return PhotoViewGalleryPageOptions(
+      imageProvider: PdfPageImageProvider(
+        pageImage,
+        index,
+        document.id,
+      ),
+      minScale: PhotoViewComputedScale.contained * 1,
+      maxScale: PhotoViewComputedScale.contained * 2,
+      initialScale: PhotoViewComputedScale.contained * 1.0,
+      heroAttributes: PhotoViewHeroAttributes(tag: '${document.id}-$index'),
+    );
+  }
+}
+
+class SomeWidget {
+  static Widget builder(
+    BuildContext context,
+    PdfViewPinchBuilders builders,
+    PdfLoadingState state,
+    WidgetBuilder loadedBuilder,
+    PdfDocument? document,
+    Exception? loadingError,
+  ) {
+    final Widget content = () {
+      switch (state) {
+        case PdfLoadingState.loading:
+          return KeyedSubtree(
+            key: const Key('pdfx.root.loading'),
+            child: builders.documentLoaderBuilder?.call(context) ??
+                const SizedBox(),
+          );
+        case PdfLoadingState.error:
+          return KeyedSubtree(
+            key: const Key('pdfx.root.error'),
+            child: builders.errorBuilder?.call(context, loadingError!) ??
+                Center(child: Text(loadingError.toString())),
+          );
+        case PdfLoadingState.success:
+          return KeyedSubtree(
+            key: Key('pdfx.root.success.${document!.id}'),
+            child: loadedBuilder(context),
+          );
+      }
+    }();
+
+    final defaultBuilder =
+        builders as PdfViewPinchBuilders<DefaultBuilderOptions>;
+    final options = defaultBuilder.options;
+
+    return AnimatedSwitcher(
+      duration: options.loaderSwitchDuration,
+      transitionBuilder: options.transitionBuilder,
+      child: content,
+    );
+  }
+
+  static Widget transitionBuilder(Widget child, Animation<double> animation) =>
+      FadeTransition(opacity: animation, child: child);
+
+  static PhotoViewGalleryPageOptions pageBuilder(
+    BuildContext context,
+    Future<PdfPageImage> pageImage,
+    int index,
+    PdfDocument document,
+  ) =>
+      PhotoViewGalleryPageOptions(
+        imageProvider: PdfPageImageProvider(
+          pageImage,
+          index,
+          document.id,
+        ),
+        minScale: PhotoViewComputedScale.contained * 1,
+        maxScale: PhotoViewComputedScale.contained * 3.0,
+        initialScale: PhotoViewComputedScale.contained * 1.0,
+        heroAttributes: PhotoViewHeroAttributes(tag: '${document.id}-$index'),
+      );
 }

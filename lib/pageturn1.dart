@@ -6,16 +6,19 @@ import 'package:flutter/rendering.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:pdfx/pdfx.dart';
+
 class PageTurn extends StatefulWidget {
-  const PageTurn({
-    Key? key,
-    this.duration = const Duration(milliseconds: 450),
-    this.cutoff = 0.6,
-    this.backgroundColor = const Color(0xFFFFFFCC),
-    required this.children,
-    this.initialIndex = 0,
-    required this.lastPage,
-  }) : super(key: key);
+  const PageTurn(
+      {Key? key,
+      this.duration = const Duration(milliseconds: 450),
+      this.cutoff = 0.6,
+      this.backgroundColor = const Color(0xFFFFFFCC),
+      required this.children,
+      this.initialIndex = 0,
+      required this.lastPage,
+      this.listImages = const []})
+      : super(key: key);
 
   final Color backgroundColor;
   final List<Widget> children;
@@ -23,6 +26,7 @@ class PageTurn extends StatefulWidget {
   final int initialIndex;
   final Widget lastPage;
   final double cutoff;
+  final List<PdfPageImage> listImages;
 
   @override
   PageTurnState createState() => PageTurnState();
