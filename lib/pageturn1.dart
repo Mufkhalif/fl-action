@@ -34,7 +34,12 @@ class PageTurn extends StatefulWidget {
 
 class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
   int pageNumber = 0;
+  int page = 0;
   List<Widget> pages = [];
+  List<Widget> showPages = [];
+  List<Widget> allPages = [];
+
+  bool isLoading = false;
 
   final List<AnimationController> _controllers = [];
   bool? _isForward;
@@ -89,7 +94,9 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
       pages.add(child);
     }
 
+    allPages = pages;
     pages = pages.reversed.toList();
+    showPages = pages.reversed.toList().sublist(0, 5).reversed.toList();
     pageNumber = widget.initialIndex;
   }
 
@@ -148,6 +155,27 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
       print('Next Page..');
     }
 
+    var listPage = allPages;
+    var nextPage = listPage.sublist(5 + pageNumber, 5 + pageNumber + 1);
+
+    showPages.insert(0, nextPage[0]);
+
+    // showPages.add(Center(
+    //   child: Text("Other text"),
+    // ));
+
+    // if (pageNumber >= 4) {
+    //   setState(() {
+    //     showPages = pages.reversed
+    //         .toList()
+    //         .sublist(pageNumber, pageNumber + 5)
+    //         .reversed
+    //         .toList();
+    //   });
+    // } else {
+    //   showPages = pages.reversed.toList().sublist(0, 5).reversed.toList();
+    // }
+
     await _controllers[pageNumber].reverse();
     if (mounted) {
       setState(() {
@@ -199,22 +227,9 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
         onHorizontalDragCancel: () => _isForward = null,
         onHorizontalDragUpdate: (details) => _turnPage(details, dimens),
         onHorizontalDragEnd: (details) => _onDragFinish(),
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            if (pageNumber < 5)
-              ...pages.reversed.toList().sublist(0, 5).reversed.toList(),
-            // if (pageNumber > 5)
-            //   ...pages.reversed.toList().sublist(5, 10).reversed.toList(),
-            // if (pageNumber > 10)
-            //   ...pages.reversed.toList().sublist(10, 15).reversed.toList(),
-            // if (pageNumber > 15)
-            //   ...pages.reversed.toList().sublist(15, 20).reversed.toList()
-            // if (pageNumber < 5) ...[...pages.sublist(0, 5)],
-            // if (pageNumber > 5) ...[...pages.sublist(5, 10)],
-            // if (pageNumber > 10) ...[...pages.sublist(5, 10)],
-          ],
-        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(fit: StackFit.expand, children: <Widget>[...showPages]),
       ),
     );
   }
