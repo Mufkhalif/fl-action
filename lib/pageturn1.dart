@@ -1,24 +1,28 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:fl_cicd/global/bloc/page_bloc.dart';
+import 'package:fl_cicd/utils/log.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:pdfx/pdfx.dart';
 
 class PageTurn extends StatefulWidget {
-  const PageTurn(
-      {Key? key,
-      this.duration = const Duration(milliseconds: 450),
-      this.cutoff = 0.6,
-      this.backgroundColor = const Color(0xFFFFFFCC),
-      required this.children,
-      this.initialIndex = 0,
-      required this.lastPage,
-      this.listImages = const []})
-      : super(key: key);
+  const PageTurn({
+    Key? key,
+    this.duration = const Duration(milliseconds: 450),
+    this.cutoff = 0.6,
+    this.backgroundColor = Colors.black,
+    required this.children,
+    this.initialIndex = 0,
+    required this.lastPage,
+    this.listImages = const [],
+    this.onTap,
+  }) : super(key: key);
 
   final Color backgroundColor;
   final List<Widget> children;
@@ -27,6 +31,7 @@ class PageTurn extends StatefulWidget {
   final Widget lastPage;
   final double cutoff;
   final List<PdfPageImage> listImages;
+  final Function()? onTap;
 
   @override
   PageTurnState createState() => PageTurnState();
@@ -39,10 +44,10 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
   List<Widget> showPages = [];
   List<Widget> allPages = [];
 
-  bool isLoading = false;
-
   final List<AnimationController> _controllers = [];
   bool? _isForward;
+
+  bool _isLoading = false;
 
   @override
   void didUpdateWidget(PageTurn oldWidget) {
@@ -75,6 +80,8 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
   void _setUp() {
     _controllers.clear();
 
+    final pageBloc = context.read<PageBloc>();
+
     pages.clear();
     for (var i = 0; i < widget.children.length; i++) {
       final controller = AnimationController(
@@ -91,12 +98,26 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
         child: widget.children[i],
       );
 
+      // final child = PageTurnImage(
+      //   amount: controller,
+      //   image: MemoryImage(bytes),
+      // );
+
       pages.add(child);
     }
 
+    pageBloc.add(
+      InitialPage(
+        pageNumber: 1,
+        pages: pages,
+        // showPages: pages.sublist(0, 10).reversed.toList(),
+        showPages: pages,
+      ),
+    );
+
     allPages = pages;
     pages = pages.reversed.toList();
-    showPages = pages.reversed.toList().sublist(0, 5).reversed.toList();
+    showPages = pages.reversed.toList().sublist(0, 10).reversed.toList();
     pageNumber = widget.initialIndex;
   }
 
@@ -106,6 +127,7 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
 
   void _turnPage(DragUpdateDetails details, BoxConstraints dimens) {
     final ratio = details.delta.dx / dimens.maxWidth;
+
     if (_isForward == null) {
       if (details.delta.dx > 0) {
         _isForward = false;
@@ -113,6 +135,7 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
         _isForward = true;
       }
     }
+
     if (_isForward! || pageNumber == 0) {
       _controllers[pageNumber].value += ratio;
     } else {
@@ -120,7 +143,7 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
     }
   }
 
-  Future _onDragFinish() async {
+  Future<void> _onDragFinish() async {
     if (_isForward != null) {
       if (_isForward!) {
         if (!_isLastPage &&
@@ -130,10 +153,6 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
           await _controllers[pageNumber].forward();
         }
       } else {
-        if (kDebugMode) {
-          print(
-              'Val:${_controllers[pageNumber - 1].value} -> ${widget.cutoff + 0.28}');
-        }
         if (!_isFirstPage &&
             _controllers[pageNumber - 1].value >= widget.cutoff) {
           await previousPage();
@@ -150,66 +169,87 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
     _isForward = null;
   }
 
-  Future nextPage() async {
+  Future<void> nextPage() async {
     if (kDebugMode) {
       print('Next Page..');
     }
 
-    var listPage = allPages;
-    var nextPage = listPage.sublist(5 + pageNumber, 5 + pageNumber + 1);
+    Log.colorGreen(pageNumber);
 
-    showPages.insert(0, nextPage[0]);
+    if (pageNumber == 9) {
+      setState(() {
+        showPages = allPages.sublist(pageNumber - 2, 15).reversed.toList();
+        _isLoading = true;
+      });
+    }
 
-    // showPages.add(Center(
-    //   child: Text("Other text"),
-    // ));
+    if (pageNumber == 14) {
+      setState(() {
+        showPages = allPages.sublist(pageNumber - 2, 20).reversed.toList();
+        _isLoading = true;
+      });
+    }
 
-    // if (pageNumber >= 4) {
-    //   setState(() {
-    //     showPages = pages.reversed
-    //         .toList()
-    //         .sublist(pageNumber, pageNumber + 5)
-    //         .reversed
-    //         .toList();
-    //   });
-    // } else {
-    //   showPages = pages.reversed.toList().sublist(0, 5).reversed.toList();
-    // }
+    if (pageNumber == 19) {
+      setState(() {
+        showPages = allPages.sublist(pageNumber - 2, 25).reversed.toList();
+        _isLoading = true;
+      });
+    }
+
+    if (pageNumber == 24) {
+      setState(() {
+        showPages = allPages.sublist(pageNumber - 2, 30).reversed.toList();
+        _isLoading = true;
+      });
+    }
+
+    if (pageNumber == 29) {
+      setState(() {
+        showPages = allPages.sublist(pageNumber - 2, 30).reversed.toList();
+        _isLoading = true;
+      });
+    }
 
     await _controllers[pageNumber].reverse();
+
     if (mounted) {
+      setState(() => pageNumber++);
+    }
+
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    if (_isLoading) {
       setState(() {
-        pageNumber++;
+        _isLoading = false;
       });
     }
   }
 
-  Future previousPage() async {
+  Future<void> previousPage() async {
     if (kDebugMode) {
       print('Previous Page..');
     }
+
     await _controllers[pageNumber - 1].forward();
     if (mounted) {
-      setState(() {
-        pageNumber--;
-      });
+      setState(() => pageNumber--);
     }
   }
 
-  Future goToPage(int index) async {
+  Future<void> goToPage(int index) async {
     if (kDebugMode) {
       print('Navigate Page ${index + 1}..');
     }
+
     if (mounted) {
-      setState(() {
-        pageNumber = index;
-      });
+      setState(() => pageNumber = index);
     }
+
     for (var i = 0; i < _controllers.length; i++) {
       if (i == index) {
         _controllers[i].forward();
       } else if (i < index) {
-        // _controllers[i].value = 0;
         _controllers[i].reverse();
       } else {
         if (_controllers[i].status == AnimationStatus.reverse) {
@@ -223,15 +263,29 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, dimens) => GestureDetector(
+        onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
         onHorizontalDragCancel: () => _isForward = null,
         onHorizontalDragUpdate: (details) => _turnPage(details, dimens),
         onHorizontalDragEnd: (details) => _onDragFinish(),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(fit: StackFit.expand, children: <Widget>[...showPages]),
+        child: _renderStack(),
       ),
     );
+  }
+
+  Widget _renderStack() {
+    return Stack(children: [
+      ...showPages,
+      if (_isLoading)
+        Align(
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.white,
+            child: const Center(child: Text("Memuat gambar lain...")),
+          ),
+        )
+    ]);
   }
 }
 
@@ -283,6 +337,7 @@ class _PageTurnWidgetState extends State<PageTurnWidget> {
 
   @override
   Widget build(BuildContext context) {
+    Log.colorGreen(_image);
     if (_image != null) {
       return CustomPaint(
         painter: PageTurnEffect(
@@ -298,17 +353,13 @@ class _PageTurnWidgetState extends State<PageTurnWidget> {
         builder: (BuildContext context, BoxConstraints constraints) {
           final size = constraints.biggest;
           return Stack(
-            // overflow: Overflow.clip,
             children: <Widget>[
               Positioned(
                 left: 1 + size.width,
                 top: 1 + size.height,
                 width: size.width,
                 height: size.height,
-                child: RepaintBoundary(
-                  key: _boundaryKey,
-                  child: widget.child,
-                ),
+                child: RepaintBoundary(key: _boundaryKey, child: widget.child),
               ),
             ],
           );

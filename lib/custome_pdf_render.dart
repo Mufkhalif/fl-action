@@ -1,9 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api, avoid_print, sized_box_for_whitespace, sort_child_properties_last, prefer_const_literals_to_create_immutables, prefer_const_constructors
 
-import 'package:fl_cicd/home_screen.dart';
 import 'package:fl_cicd/pageturn1.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:synchronized/synchronized.dart';
 
@@ -123,29 +121,6 @@ class _CustomePagePdfState extends State<CustomePagePdf> {
               lastPage: const Center(child: Text('Last Page!')),
             )
           : Container();
-
-  Widget _buildLoaded(BuildContext context) => PhotoViewGallery.builder(
-        builder: (context, index) => widget.builders.pageBuilder(
-          context,
-          _getPageImage(index),
-          index,
-          _controller._document!,
-        ),
-        itemCount: _controller._document?.pagesCount ?? 0,
-        loadingBuilder: (_, __) =>
-            widget.builders.pageLoaderBuilder?.call(context) ??
-            const SizedBox(),
-        backgroundDecoration: widget.backgroundDecoration,
-        pageController: _controller._pageController,
-        onPageChanged: (index) {
-          _currentIndex = index;
-          final pageNumber = index + 1;
-          widget.onPageChanged?.call(pageNumber);
-          _controller.pageListenable.value = pageNumber;
-        },
-        scrollDirection: widget.scrollDirection,
-        scrollPhysics: widget.physics,
-      );
 }
 
 /// Pages control
