@@ -42,7 +42,6 @@ dependencies:
   flutter_bloc: ^8.0.1
   flip_book: ^0.0.1+3
   animations: ^2.0.3
-  webview_flutter: ^3.0.4
 
 dev_dependencies:
   flutter_test:

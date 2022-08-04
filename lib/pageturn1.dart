@@ -1,5 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'dart:typed_data';
+
 import 'package:fl_cicd/global/bloc/page_bloc.dart';
 import 'package:fl_cicd/utils/log.dart';
 import 'package:flutter/foundation.dart';
@@ -21,6 +23,7 @@ class PageTurn extends StatefulWidget {
     this.initialIndex = 0,
     required this.lastPage,
     this.listImages = const [],
+    this.listBytes = const [],
     this.onTap,
   }) : super(key: key);
 
@@ -31,6 +34,7 @@ class PageTurn extends StatefulWidget {
   final Widget lastPage;
   final double cutoff;
   final List<PdfPageImage> listImages;
+  final List<Uint8List> listBytes;
   final Function()? onTap;
 
   @override
@@ -47,21 +51,21 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
   final List<AnimationController> _controllers = [];
   bool? _isForward;
 
-  bool _isLoading = false;
+  bool _isLoading = true;
 
-  @override
-  void didUpdateWidget(PageTurn oldWidget) {
-    if (oldWidget.children != widget.children) {
-      _setUp();
-    }
-    if (oldWidget.duration != widget.duration) {
-      _setUp();
-    }
-    if (oldWidget.backgroundColor != widget.backgroundColor) {
-      _setUp();
-    }
-    super.didUpdateWidget(oldWidget);
-  }
+  // @override
+  // void didUpdateWidget(PageTurn oldWidget) {
+  //   if (oldWidget.children != widget.children) {
+  //     _setUp();
+  //   }
+  //   if (oldWidget.duration != widget.duration) {
+  //     _setUp();
+  //   }
+  //   if (oldWidget.backgroundColor != widget.backgroundColor) {
+  //     _setUp();
+  //   }
+  //   super.didUpdateWidget(oldWidget);
+  // }
 
   @override
   void dispose() {
@@ -78,6 +82,10 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
   }
 
   void _setUp() {
+    setState(() {
+      _isLoading = true;
+    });
+
     _controllers.clear();
 
     final pageBloc = context.read<PageBloc>();
@@ -92,33 +100,38 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
 
       _controllers.add(controller);
 
-      final child = PageTurnWidget(
-        backgroundColor: widget.backgroundColor,
-        amount: controller,
-        child: widget.children[i],
-      );
-
-      // final child = PageTurnImage(
+      // final child = PageTurnWidget(
+      //   backgroundColor: widget.backgroundColor,
       //   amount: controller,
-      //   image: MemoryImage(bytes),
+      //   child: widget.children[i],
       // );
+
+      final child = PageTurnImage(
+        amount: controller,
+        image: MemoryImage(widget.listBytes[i]),
+      );
 
       pages.add(child);
     }
 
-    pageBloc.add(
-      InitialPage(
-        pageNumber: 1,
-        pages: pages,
-        // showPages: pages.sublist(0, 10).reversed.toList(),
-        showPages: pages,
-      ),
-    );
+    // pageBloc.add(
+    //   InitialPage(
+    //     pageNumber: 1,
+    //     pages: pages,
+    //     showPages: pages.sublist(0, 10).reversed.toList(),
+    //     // showPages: pages,
+    //   ),
+    // );
 
     allPages = pages;
     pages = pages.reversed.toList();
-    showPages = pages.reversed.toList().sublist(0, 10).reversed.toList();
+    // showPages = pages.reversed.toList().sublist(0, 10).reversed.toList();
+    showPages = pages;
     pageNumber = widget.initialIndex;
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   bool get _isLastPage => (pages.length - 1) == pageNumber;
@@ -174,42 +187,42 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
       print('Next Page..');
     }
 
-    Log.colorGreen(pageNumber);
+    // Log.colorGreen(pageNumber);
 
-    if (pageNumber == 9) {
-      setState(() {
-        showPages = allPages.sublist(pageNumber - 2, 15).reversed.toList();
-        _isLoading = true;
-      });
-    }
+    // if (pageNumber == 9) {
+    //   setState(() {
+    //     showPages = allPages.sublist(pageNumber - 2, 15).reversed.toList();
+    //     _isLoading = true;
+    //   });
+    // }
 
-    if (pageNumber == 14) {
-      setState(() {
-        showPages = allPages.sublist(pageNumber - 2, 20).reversed.toList();
-        _isLoading = true;
-      });
-    }
+    // if (pageNumber == 14) {
+    //   setState(() {
+    //     showPages = allPages.sublist(pageNumber - 2, 20).reversed.toList();
+    //     _isLoading = true;
+    //   });
+    // }
 
-    if (pageNumber == 19) {
-      setState(() {
-        showPages = allPages.sublist(pageNumber - 2, 25).reversed.toList();
-        _isLoading = true;
-      });
-    }
+    // if (pageNumber == 19) {
+    //   setState(() {
+    //     showPages = allPages.sublist(pageNumber - 2, 25).reversed.toList();
+    //     _isLoading = true;
+    //   });
+    // }
 
-    if (pageNumber == 24) {
-      setState(() {
-        showPages = allPages.sublist(pageNumber - 2, 30).reversed.toList();
-        _isLoading = true;
-      });
-    }
+    // if (pageNumber == 24) {
+    //   setState(() {
+    //     showPages = allPages.sublist(pageNumber - 2, 30).reversed.toList();
+    //     _isLoading = true;
+    //   });
+    // }
 
-    if (pageNumber == 29) {
-      setState(() {
-        showPages = allPages.sublist(pageNumber - 2, 30).reversed.toList();
-        _isLoading = true;
-      });
-    }
+    // if (pageNumber == 29) {
+    //   setState(() {
+    //     showPages = allPages.sublist(pageNumber - 2, 30).reversed.toList();
+    //     _isLoading = true;
+    //   });
+    // }
 
     await _controllers[pageNumber].reverse();
 
@@ -219,11 +232,11 @@ class PageTurnState extends State<PageTurn> with TickerProviderStateMixin {
 
     await Future.delayed(const Duration(milliseconds: 400));
 
-    if (_isLoading) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    // if (_isLoading) {
+    //   setState(() {
+    //     _isLoading = false;
+    //   });
+    // }
   }
 
   Future<void> previousPage() async {
@@ -527,13 +540,16 @@ class _PageTurnImageState extends State<PageTurnImage> {
   @override
   Widget build(BuildContext context) {
     if (_imageInfo != null) {
-      return CustomPaint(
-        painter: PageTurnEffect(
-          amount: widget.amount,
-          image: _imageInfo!.image,
-          backgroundColor: widget.backgroundColor,
+      return GestureDetector(
+        onTap: () => Log.colorGreen("tap"),
+        child: CustomPaint(
+          painter: PageTurnEffect(
+            amount: widget.amount,
+            image: _imageInfo!.image,
+            backgroundColor: widget.backgroundColor,
+          ),
+          size: Size.infinite,
         ),
-        size: Size.infinite,
       );
     } else {
       return const SizedBox();

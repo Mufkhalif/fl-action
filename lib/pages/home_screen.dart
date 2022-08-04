@@ -52,12 +52,7 @@ class _HomePagePdfViewState extends State<HomePagePdfView> {
       final pageImage = await page.render(
         width: page.width,
         height: page.height,
-        quality: 90,
       );
-
-      if (i == 1) {
-        Log.colorGreen(pageImage!.bytes);
-      }
 
       temp.add(pageImage!.bytes);
       data.add(pageImage);
@@ -67,13 +62,13 @@ class _HomePagePdfViewState extends State<HomePagePdfView> {
     setState(() {
       listImages = data;
       listBytes = temp;
-      isLoading = false;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 4));
+
+    isLoading = false;
 
     setState(() {
-      listImages = data;
       isLoading = false;
     });
   }
@@ -95,6 +90,7 @@ class _HomePagePdfViewState extends State<HomePagePdfView> {
                     child: PageTurn(
                       backgroundColor: Colors.white,
                       lastPage: const Center(child: Text('Last Page!')),
+                      listBytes: listBytes,
                       children: <Widget>[
                         for (var i = 0; i < listImages.length; i++)
                           ContentPage(data: listImages[i])
