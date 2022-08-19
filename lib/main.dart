@@ -19,9 +19,6 @@ class MyApp extends StatelessWidget {
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
         home: HomePagePdfView(),
-        // home: WebViewPage(),
-        // home: OpenContainerTransformDemo(),
-        // home: ScrollVerticalPage(),
       ),
     );
   }
